@@ -7,4 +7,5 @@ import (
 
 func SetupRoutes(app *fiber.App) {
 	app.Get("/api/forum/post", controllers.GetAllPosts)
+	app.Post("/api/forum/post", controllers.CreatePost)
 }
