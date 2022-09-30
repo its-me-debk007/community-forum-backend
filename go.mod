@@ -3,14 +3,19 @@ module github.com/its-me-debk007/community-forum-backend
 go 1.19
 
 require (
+	github.com/cloudinary/cloudinary-go v1.7.0
 	github.com/gofiber/fiber/v2 v2.38.1
 	github.com/joho/godotenv v1.4.0
+	github.com/lib/pq v1.10.2
 	gorm.io/driver/postgres v1.3.10
 	gorm.io/gorm v1.23.10
 )
 
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
+	github.com/creasty/defaults v1.5.1 // indirect
+	github.com/google/uuid v1.2.0 // indirect
+	github.com/gorilla/schema v1.2.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.13.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect

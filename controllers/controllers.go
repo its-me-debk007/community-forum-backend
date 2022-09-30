@@ -2,9 +2,12 @@ package controllers
 
 import (
 	"fmt"
+	"log"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/its-me-debk007/community-forum-backend/database"
+	"github.com/its-me-debk007/community-forum-backend/helpers"
 	"github.com/its-me-debk007/community-forum-backend/models"
 )
 
@@ -37,22 +40,69 @@ func CreatePost(c *fiber.Ctx) error {
 	}
 
 	files := form.File["post_images"]
-	// log.Println("\n" + files[0].Filename + "\n")
+	postImages := []string{}
+
+	for _, fileHeader := range files {
+		file, err := fileHeader.Open()
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(models.Message{
+				Message: fmt.Sprintf("Error in opening file:- %s", err.Error()),
+			})
+		}
+
+		fileUrl, err := helpers.UploadImage(file, time.Now())
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(models.Message{
+				Message: err.Error(),
+			})
+		}
+
+		postImages = append(postImages, fileUrl)
+	}
+
+	log.Println(postImages)
 
 	data := models.Post{
 		PostTitle:       postTitle,
 		PostDescription: postDescription,
-		PostImages:      files[0].Filename,
-		AuthorID:        54,
+		PostImages:      postImages,
+		AuthorID:        44,
 	}
 
 	if err := database.DB.Create(&data); err.Error != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(models.Message{
-			Message: fmt.Sprintf("DATABASE DATA CREATE ERROR :-  %s", err.Error.Error()),
+			Message: err.Error.Error(),
 		})
 	}
 
 	return c.JSON(models.Message{
 		Message: "post created successfully",
+	})
+}
+
+func LikePost(c *fiber.Ctx) error {
+	body := new(struct {
+		PostId uint `json:"post_id"`
+	})
+
+	if err := c.BodyParser(body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(models.Message{
+			Message: err.Error(),
+		})
+	}
+
+	post := models.Post{}
+
+	database.DB.First(&post, "post_id = ?", body.PostId)
+	if post.PostID == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(models.Message{
+			Message: "post doesen't exist",
+		})
+	}
+
+	database.DB.Model(&post).Update("likes_count", post.LikesCount+1)
+
+	return c.JSON(models.Message{
+		Message: "request successful",
 	})
 }
