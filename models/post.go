@@ -11,4 +11,5 @@ type Post struct {
 	Author          User           `json:"author" gorm:"foreignKey:AuthorID"`
 	LikesCount      uint           `json:"likes_count"`
 	IsLiked         bool           `json:"is_liked"`
+	Comments        []Comment      `json:"comments" gorm:"foreignKey:CommentID"`
 }

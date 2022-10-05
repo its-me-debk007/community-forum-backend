@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -16,10 +15,25 @@ func GetAllPosts(c *fiber.Ctx) error {
 	database.DB.Find(&data)
 
 	author := models.User{}
+	likes := models.Likes{}
 
 	for i := range data {
 		database.DB.First(&author, "id = ?", data[i].AuthorID)
 		data[i].Author = author
+
+		database.DB.First(&likes, "id = ?", data[i].PostID)
+
+		var i int
+		for i = range likes.Users {
+			if likes.Users[i] == 44 {
+				break
+			}
+		}
+
+		if i != len(likes.Users) {
+			data[i].IsLiked = true
+		}
+
 		author = models.User{}
 	}
 
@@ -60,8 +74,6 @@ func CreatePost(c *fiber.Ctx) error {
 		postImages = append(postImages, fileUrl)
 	}
 
-	log.Println(postImages)
-
 	data := models.Post{
 		PostTitle:       postTitle,
 		PostDescription: postDescription,
@@ -82,7 +94,7 @@ func CreatePost(c *fiber.Ctx) error {
 
 func LikePost(c *fiber.Ctx) error {
 	body := new(struct {
-		PostId uint `json:"post_id"`
+		PostID uint `json:"post_id"`
 	})
 
 	if err := c.BodyParser(body); err != nil {
@@ -93,16 +105,80 @@ func LikePost(c *fiber.Ctx) error {
 
 	post := models.Post{}
 
-	database.DB.First(&post, "post_id = ?", body.PostId)
+	database.DB.First(&post, "post_id = ?", body.PostID)
 	if post.PostID == 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(models.Message{
 			Message: "post doesen't exist",
 		})
 	}
 
-	database.DB.Model(&post).Update("likes_count", post.LikesCount+1)
+	likes := models.Likes{}
+	database.DB.First(&likes, "id = ?", body.PostID)
+
+	var i int
+	for i = range likes.Users {
+		if likes.Users[i] == 32 {
+			break
+		}
+	} // implement binary search for optimisation
+
+	if i != len(likes.Users) {
+		post.IsLiked = true
+	}
+
+	if post.IsLiked {
+		database.DB.Model(&post).Update("likes_count", post.LikesCount-1)
+		// database.DB.Model(&post).Update("is_liked", false)
+		likes.Users = append(likes.Users[:i], likes.Users[i+1:]...)
+		database.DB.Model(&likes).Update("users", likes.Users)
+
+	} else {
+		database.DB.Model(&post).Update("likes_count", post.LikesCount+1)
+		// database.DB.Model(&post).Update("is_liked", true)
+
+		likes.Users = append(likes.Users, 44) // put likes.Users in sorted order
+
+		if likes.ID != 0 {
+			database.DB.Model(&likes).Update("users", likes.Users)
+
+		} else {
+			likes.ID = body.PostID
+			database.DB.Save(&likes)
+		}
+	}
 
 	return c.JSON(models.Message{
 		Message: "request successful",
+	})
+}
+
+func CommentPost(c *fiber.Ctx) error {
+	body := new(
+		struct {
+			PostId     uint   `json:"post_id"`
+			CommentMsg string `json:"comment_msg"`
+		},
+	)
+
+	if err := c.BodyParser(body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(models.Message{
+			Message: err.Error(),
+		})
+	}
+
+	post := models.Post{}
+
+	database.DB.First(&post, "id = ?", body.PostId)
+
+	if post.PostID == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(models.Message{
+			Message: "post doesen't exist",
+		})
+	}
+
+	// post.Comments = append(post.Comments, body.CommentMsg)
+
+	return c.JSON(models.Message{
+		Message: "comment created successfully",
 	})
 }

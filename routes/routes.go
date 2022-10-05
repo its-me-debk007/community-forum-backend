@@ -9,4 +9,5 @@ func SetupRoutes(app *fiber.App) {
 	app.Get("/api/forum/post", controllers.GetAllPosts)
 	app.Post("/api/forum/post", controllers.CreatePost)
 	app.Post("/api/forum/post/like", controllers.LikePost)
+	app.Post("/api/forum/post/comment", controllers.CommentPost)
 }
