@@ -24,6 +24,7 @@ func ConnectDb() {
 		new(models.User),
 		new(models.Post),
 		new(models.Likes),
+		new(models.Comment),
 	); err != nil {
 		log.Fatalln("AUTO_MIGRATION_ERROR")
 	}

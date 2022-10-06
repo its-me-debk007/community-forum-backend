@@ -168,7 +168,7 @@ func CommentPost(c *fiber.Ctx) error {
 
 	post := models.Post{}
 
-	database.DB.First(&post, "id = ?", body.PostId)
+	database.DB.First(&post, "post_id = ?", body.PostId)
 
 	if post.PostID == 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(models.Message{
@@ -176,9 +176,29 @@ func CommentPost(c *fiber.Ctx) error {
 		})
 	}
 
-	// post.Comments = append(post.Comments, body.CommentMsg)
+	comment := models.Comment{}
+
+	var i int
+	for i = range post.Comments {
+		if post.Comments[i].CommentorID == 44 {
+			break
+		}
+	}
+
+	if i != len(post.Comments) {
+		comment.Edited = true
+	}
+
+	comment.CommentorID = 44
+	comment.CommentMsg = body.CommentMsg
+	comment.CommentedAt = time.Now()
+
+	post.Comments = append(post.Comments, comment)
+
+	database.DB.Model(&post).Update("comments", post.Comments)
+	// database.DB.Save(&post)
 
 	return c.JSON(models.Message{
-		Message: "comment created successfully",
+		Message: "comment created/updated successfully",
 	})
 }
